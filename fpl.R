@@ -113,4 +113,5 @@ colnames(p) <- c("xPts")
 player_summary$xPts <- p$xPts
 player_summary <- player_summary %>% mutate(pts_diff = points - xPts)
 
+#Show the top 15 players with highest expected points
 head(player_summary %>% select(first_name,last_name,points,xPts, pts_diff) %>% arrange((pts_diff)),n=15)

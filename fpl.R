@@ -22,13 +22,13 @@ player_list <- players %>% select(id, team_name, pos, name=web_name, starts, min
                                   xA=expected_assists_per_90,xGA=expected_goals_conceded_per_90,
                                   bonus,bps,influence,creativity,threat,ict_index,
                                   ppg=points_per_game,total_pts=total_points,
-                                  status, sel=selected_by_percent,news,cost=now_cost)
+                                  status, sel=selected_by_percent,cost=now_cost)
 
 gk_list <- gk_list %>% select(id, team_name, pos, name=web_name, starts, minutes, form,
                                   saves=saves_per_90,xGA=expected_goals_conceded_per_90,
                                   bonus,bps,influence,creativity,threat,ict_index,
                                   ppg=points_per_game,total_pts=total_points,
-                                  status, sel=selected_by_percent,news,cost=now_cost)
+                                  status, sel=selected_by_percent,cost=now_cost)
 
 player_list <- player_list %>% mutate(pts = (total_pts / minutes) * 90)
 gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90)

@@ -17,6 +17,9 @@ players <- inner_join(players, teams, by=c("team"="id"))
 gk_list <- players %>% filter(pos == "GKP")
 player_list <- players %>% filter(!pos == "GKP")
 
+#At least 90 mins playtime
+player_list <- player_list %>% filter(minutes >= 90)
+
 player_list <- players %>% select(id, team_name, pos, name=web_name, starts, minutes, form,
                                   xG=expected_goals_per_90, xG_inv=expected_goal_involvements_per_90,
                                   xA=expected_assists_per_90,xGA=expected_goals_conceded_per_90,

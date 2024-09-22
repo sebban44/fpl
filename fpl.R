@@ -33,11 +33,9 @@ gk_list <- gk_list %>% select(id, team_name, pos, name=web_name, starts, minutes
 player_list <- player_list %>% mutate(pts = (total_pts / minutes) * 90)
 gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90)
 
-player_list$pts <- ifelse(is.na(player_list$pts), 0, player_list$pts)
-gk_list$pts <- ifelse(is.na(gk_list$pts), 0, gk_list$pts)
 
 model_players <- brm(
-  pts ~ xG + xG_inv + xA + xGA + influence + creativity + threat  + (1 | id),
+  pts ~ minutes + xG + xG_inv + xA + xGA + influence + creativity + threat  + (1 | id),
   data = player_list,
   family = gaussian(),
   prior = c(
@@ -47,6 +45,14 @@ model_players <- brm(
   chains = 4,
   cores = 4
 )
+
+posterior_samples <- posterior_predict(model_players, newdata = player_list)
+
+predicted_pts <- apply(posterior_samples, 2, mean)
+
+player_list <- player_list %>% select(id,name,pts)
+
+player_list$pred_points <- predicted_pts
 
 # For goalkeepers
 #model_goalkeepers <- brm(

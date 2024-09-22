@@ -33,3 +33,30 @@ gk_list <- gk_list %>% select(id, team_name, pos, name=web_name, starts, minutes
 player_list <- player_list %>% mutate(pts = (total_pts / minutes) * 90)
 gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90)
 
+model_players <- brm(
+  pts ~ xG + xA + influence + creativity + threat + ict_index + (1 | team_name) + (1 | id),
+  data = player_list,
+  family = gaussian(),
+  prior = c(
+    prior(normal(0, 1), class = "b"),
+    prior(cauchy(0, 2), class = "sd")
+  ),
+  chains = 4,
+  cores = 4
+)
+
+# For goalkeepers
+#model_goalkeepers <- brm(
+  #pts ~ saves + xGA + influence + creativity + threat + ict_index + (1 | team_name) + (1 | id),
+  #data = gk_list,
+  #family = gaussian(),
+  #prior = c(
+    #prior(normal(0, 1), class = "b"),
+    #prior(cauchy(0, 2), class = "sd")
+  #),
+  #chains = 4,
+  #cores = 4,
+  #iter = 4000
+#)
+
+

@@ -57,6 +57,9 @@ player_list <- player_list %>% select(id,name,pts)
 
 player_list$pred_points <- predicted_pts
 
+#Arrange data by highest predicted points
+player_list <- player_list %>% arrange(desc(pred_points))
+
 # For goalkeepers
 #model_goalkeepers <- brm(
   #pts ~ saves + xGA + influence + creativity + threat + ict_index + (1 | team_name) + (1 | id),

@@ -18,7 +18,7 @@ gk_list <- players %>% filter(pos == "GKP")
 player_list <- players %>% filter(!pos == "GKP")
 
 #At least 90 mins playtime
-player_list <- player_list %>% filter(minutes >= 90)
+players <- players %>% filter(minutes >= 90)
 
 player_list <- players %>% select(id, team_name, pos, name=web_name, starts, minutes, form,
                                   xG=expected_goals_per_90, xG_inv=expected_goal_involvements_per_90,

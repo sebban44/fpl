@@ -33,6 +33,8 @@ gk_list <- gk_list %>% select(id, team_name, pos, name=web_name, starts, minutes
 player_list <- player_list %>% mutate(pts = (total_pts / minutes) * 90)
 gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90)
 
+player_list$pts <- ifelse(is.na(player_list$pts, 0, player_list$pts))
+
 model_players <- brm(
   pts ~ xG + xG_inv + xA + xGA + influence + creativity + threat  + (1 | id),
   data = player_list,

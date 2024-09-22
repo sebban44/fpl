@@ -60,6 +60,10 @@ player_list$pred_points <- predicted_pts
 #Arrange data by highest predicted points
 player_list <- player_list %>% arrange(desc(pred_points))
 
+#Get the 15 top predicted players
+head(player_list, n = 15)
+
+
 # For goalkeepers
 #model_goalkeepers <- brm(
   #pts ~ saves + xGA + influence + creativity + threat + ict_index + (1 | team_name) + (1 | id),

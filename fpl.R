@@ -40,7 +40,7 @@ gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90)
 model_players <- brm(
   pts ~ xG + xG_inv + xA + xGA + influence + creativity + threat  + (1 | id),
   data = player_list,
-  family = gaussian(),
+  family = binomial(),
   prior = c(
     prior(normal(0, 1), class = "b"),
     prior(normal(0, 1), class = "sd")

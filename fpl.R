@@ -1,7 +1,7 @@
 library(dplyr)
 library(rvest)
 library(jsonlite)
-library(brms)
+
 
 data <- fromJSON("https://fantasy.premierleague.com/api/bootstrap-static/")
 
@@ -34,48 +34,16 @@ gk_list <- gk_list %>% select(id, team_name, pos, name=web_name, starts, minutes
                                   status, sel=selected_by_percent,cost=now_cost)
 
 player_list <- player_list %>% mutate(pts = (total_pts / minutes) * 90)
-gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90)
+gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90))
 
+library(lme4)
 
-model_players <- brm(
-  pts ~ xG + xG_inv + xA + xGA + influence + creativity + threat  + (1 | id),
+# Fit the model using glmer (frequentist approach)
+model_players <- glmer(
+  pts ~ xG + xG_inv + xA + xGA + influence + creativity + threat + (1 | id),
   data = player_list,
-  family = binomial(),
-  prior = c(
-    prior(normal(0, 1), class = "b"),
-    prior(normal(0, 1), class = "sd")
-  ),
-  chains = 4,
-  cores = 4
+  family = binomial(link = "logit")
 )
 
-posterior_samples <- posterior_predict(model_players, newdata = player_list)
-
-predicted_pts <- apply(posterior_samples, 2, mean)
-
-player_list <- player_list %>% select(id,name,pts)
-
-player_list$pred_points <- predicted_pts
-
-#Arrange data by highest predicted points
-player_list <- player_list %>% arrange(desc(pred_points))
-
-#Get the 15 top predicted players
-head(player_list, n = 15)
-
-
-# For goalkeepers
-#model_goalkeepers <- brm(
-  #pts ~ saves + xGA + influence + creativity + threat + ict_index + (1 | team_name) + (1 | id),
-  #data = gk_list,
-  #family = gaussian(),
-  #prior = c(
-    #prior(normal(0, 1), class = "b"),
-    #prior(cauchy(0, 2), class = "sd")
-  #),
-  #chains = 4,
-  #cores = 4,
-  #iter = 4000
-#)
-
-
+# Summary of the model
+summary(model_players)

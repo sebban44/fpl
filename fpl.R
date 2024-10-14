@@ -2,48 +2,70 @@ library(dplyr)
 library(rvest)
 library(jsonlite)
 
-
 data <- fromJSON("https://fantasy.premierleague.com/api/bootstrap-static/")
 
 teams <- data$teams
 players <- data$elements
-position <- data$element_type
 
-position <- position %>% select(id,pos=singular_name_short)
-teams <- teams %>% select(id,team_name=short_name)
+player_list <- players %>% select(id, first_name, second_name, selected_by_percent,)
 
-players <- inner_join(players,position,by=c("element_type"="id"))
-players <- inner_join(players, teams, by=c("team"="id"))
-gk_list <- players %>% filter(pos == "GKP")
-player_list <- players %>% filter(!pos == "GKP")
+player_df <- data.frame()
 
-#At least 90 mins playtime
-players <- players %>% filter(minutes >= 90)
+#Go through all players to fetch match history
+for (p in player_list$id) {
+  player_url <- paste0("https://fantasy.premierleague.com/api/element-summary/", p, "/")
+  player_data <- fromJSON(player_url)
 
-player_list <- players %>% select(id, team_name, pos, name=web_name, starts, minutes, form,
-                                  xG=expected_goals_per_90, xG_inv=expected_goal_involvements_per_90,
-                                  xA=expected_assists_per_90,xGA=expected_goals_conceded_per_90,
-                                  bonus,bps,influence,creativity,threat,ict_index,
-                                  ppg=points_per_game,total_pts=total_points,
-                                  status, sel=selected_by_percent,cost=now_cost)
+  player_history <- player_data$history
 
-gk_list <- gk_list %>% select(id, team_name, pos, name=web_name, starts, minutes, form,
-                                  saves=saves_per_90,xGA=expected_goals_conceded_per_90,
-                                  bonus,bps,influence,creativity,threat,ict_index,
-                                  ppg=points_per_game,total_pts=total_points,
-                                  status, sel=selected_by_percent,cost=now_cost)
+  player_df <- bind_rows(player_df, player_history)
+}
 
-player_list <- player_list %>% mutate(pts = (total_pts / minutes) * 90)
-gk_list <- gk_list %>% mutate(pts = (total_pts / minutes) * 90))
+player_df <- inner_join(player_df,player_list,by=c("element" = "id")) 
 
-library(lme4)
-
-# Fit the model using glmer (frequentist approach)
-model_players <- glmer(
-  pts ~ xG + xG_inv + xA + xGA + influence + creativity + threat + (1 | id),
-  data = player_list,
-  family = binomial(link = "logit")
+player_df <- player_df %>%
+select(
+    date = kickoff_time,
+    id=element,
+    first_name = first_name,
+    last_name = second_name,
+    selection_pct = selected_by_percent,
+    pts = total_points,
+    min_played = minutes,
+    goals_scored,
+    assists,
+    clean_sheets,
+    goals_conceded,
+    own_goals,
+    penalties_saved,
+    penalties_missed,
+    yellow_cards,
+    red_cards,
+    saves,
+    bonus,
+    bps,
+    influence,
+    creativity,
+    threat,
+    ict_index,
+    starts,
+    xG = expected_goals,
+    xA = expected_assists,
+    xG_Inv = expected_goal_involvements,
+    xGC = expected_goals_conceded,
+    value,
+    transfers_balance,
+    selected,
+    transfers_in,
+    transfers_out
 )
 
-# Summary of the model
-summary(model_players)
+#Convert to numeric variables
+player_df$influence <- as.numeric(player_df$influence)
+player_df$creativity <- as.numeric(player_df$creativity)
+player_df$threat  <- as.numeric(player_df$threat)
+player_df$ict_index <- as.numeric(player_df$ict_index)
+player_df$xG <- as.numeric(player_df$xG)
+player_df$xA <- as.numeric(player_df$xA)
+player_df$xG_Inv <- as.numeric(player_df$xG_Inv)
+player_df$xGC <- as.numeric(player_df$xGC)

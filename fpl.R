@@ -9,10 +9,12 @@ data <- fromJSON("https://fantasy.premierleague.com/api/bootstrap-static/")
 teams <- data$teams
 teams <- teams %>% select(team_id=id,team_name=name)
 players <- data$elements
-#position <- data$element_type
-#position <- position %>% select(id,pos=singular_name_short)
+position <- data$element_type
+position <- position %>% select(id,pos=singular_name_short)
 
-player_list <- players %>% select(id, team, first_name, second_name, pos ,selected_by_percent)
+players <- inner_join(players,position,by=c("element_type"="id"))
+
+player_list <- players %>% select(id, team, name = web_name, pos ,selected_by_percent)
 
 player_df <- data.frame()
 
@@ -31,7 +33,6 @@ player_df <- inner_join(player_df,player_list,by=c("element" = "id"))
 #add team and pos to players
 player_df <- inner_join(player_df, teams,by = c("team" = "team_id"))
 player_df <- inner_join(player_df, teams,by = c("opponent_team" = "team_id"))
-#players <- inner_join(players,position,by=c("element"="id"))
 
 player_df <- player_df %>%
 mutate(

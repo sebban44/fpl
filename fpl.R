@@ -36,7 +36,6 @@ player_df <- inner_join(player_df, teams,by = c("opponent_team" = "team_id"))
 
 player_df <- player_df %>%
 mutate(
-   name = paste0(first_name," ", second_name),
    date = as.Date(kickoff_time)
   ) %>%
 select(

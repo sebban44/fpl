@@ -1,6 +1,7 @@
 library(dplyr)
 library(rvest)
 library(jsonlite)
+library(brms)
 
 data <- fromJSON("https://fantasy.premierleague.com/api/bootstrap-static/")
 

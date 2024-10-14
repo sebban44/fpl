@@ -2,13 +2,17 @@ library(dplyr)
 library(rvest)
 library(jsonlite)
 library(brms)
+library(lme4)
 
 data <- fromJSON("https://fantasy.premierleague.com/api/bootstrap-static/")
 
 teams <- data$teams
+teams <- teams %>% select(team_id=id,team_name=name)
 players <- data$elements
+#position <- data$element_type
+#position <- position %>% select(id,pos=singular_name_short)
 
-player_list <- players %>% select(id, first_name, second_name, selected_by_percent,)
+player_list <- players %>% select(id, team, first_name, second_name, pos ,selected_by_percent)
 
 player_df <- data.frame()
 
@@ -24,12 +28,23 @@ for (p in player_list$id) {
 
 player_df <- inner_join(player_df,player_list,by=c("element" = "id")) 
 
+#add team and pos to players
+player_df <- inner_join(player_df, teams,by = c("team" = "team_id"))
+player_df <- inner_join(player_df, teams,by = c("opponent_team" = "team_id"))
+#players <- inner_join(players,position,by=c("element"="id"))
+
 player_df <- player_df %>%
+mutate(
+   name = paste0(first_name," ", second_name),
+   date = as.Date(kickoff_time)
+  ) %>%
 select(
-    date = kickoff_time,
-    id=element,
-    first_name = first_name,
-    last_name = second_name,
+    date,
+    team = team_name.x,
+    opponent = team_name.y,
+    player_id=element,
+    name,
+    pos,
     selection_pct = selected_by_percent,
     pts = total_points,
     min_played = minutes,
@@ -61,6 +76,9 @@ select(
     transfers_out
 )
 
+gkp_df <- player_df %>% filter(pos == "GKP")
+player_df <- player_df %>% filter(!pos == "GKP")
+
 #Convert to numeric variables
 player_df$influence <- as.numeric(player_df$influence)
 player_df$creativity <- as.numeric(player_df$creativity)
@@ -70,3 +88,17 @@ player_df$xG <- as.numeric(player_df$xG)
 player_df$xA <- as.numeric(player_df$xA)
 player_df$xG_Inv <- as.numeric(player_df$xG_Inv)
 player_df$xGC <- as.numeric(player_df$xGC)
+
+#Factors
+player_df$name <- as.factor(player_df$name)
+
+model <- lmer(
+  pts ~ xG + xA + xG_Inv + xGC + bps + influence + threat + ict_index + creativity + (1 | name),
+  data=player_df,
+  nAGQ=0,
+  control=glmerGrontrol(optimizer = "nloptwrap")
+)
+
+player_rank <- data.frame(ranef(model))
+
+print(head(player_rank %>% arrange(desc(condval)), n =25))

@@ -93,10 +93,10 @@ player_df$xGC <- as.numeric(player_df$xGC)
 player_df$name <- as.factor(player_df$name)
 
 model <- lmer(
-  pts ~ xG + xA + xG_Inv + xGC + bps + influence + threat + ict_index + creativity + (1 | name),
+  pts ~ xG + xA + xG_Inv + xGC + bps + influence + threat + ict_index + creativity + min_played + (1 | name),
   data=player_df,
-  nAGQ=0,
-  control=glmerGrontrol(optimizer = "nloptwrap")
+  #nAGQ=0,
+  #control=glmerGrontrol(optimizer = "nloptwrap")
 )
 
 player_rank <- data.frame(ranef(model))

@@ -94,13 +94,13 @@ player_df$name <- as.factor(player_df$name)
 
 #Scale variables
 
-model <- lmer(
-  pts ~ xG + xA + xG_Inv + xGC + bps + influence + threat + ict_index + creativity + min_played + (1 | name),
-  data=player_df,
-  #nAGQ=0,
-  #control=glmerGrontrol(optimizer = "nloptwrap")
+
+# Poisson mixed-effects model
+player_model_poisson <- glmer(
+  pts ~ log(min_played) + pos + team + opponent + xG + xA + (1 | player_id), 
+  family = poisson(link = "log"), 
+  data = player_df,
+  nAGQ=0,
+  control=glmerGrontrol(optimizer = "nloptwrap")
 )
 
-player_rank <- data.frame(ranef(model))
-
-print(head(player_rank %>% arrange(desc(condval)), n =25))

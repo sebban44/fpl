@@ -92,6 +92,8 @@ player_df$xGC <- as.numeric(player_df$xGC)
 #Factors
 player_df$name <- as.factor(player_df$name)
 
+#Scale variables
+
 model <- lmer(
   pts ~ xG + xA + xG_Inv + xGC + bps + influence + threat + ict_index + creativity + min_played + (1 | name),
   data=player_df,

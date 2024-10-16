@@ -107,7 +107,7 @@ player_df$threat <- scale(player_df$threat, center=T, scale=T)
 
 
 player_model <- lmer(
-  pts ~ xG + xG_Inv + xA + xGC + (1 | name) + (1 | team) + (1 | opponent), 
+  pts ~ xG + xG_Inv + xA + xGC + starts + (1 | name) + (1 | team) + (1 | opponent), 
   data = player_df
 )
 

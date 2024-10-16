@@ -97,10 +97,10 @@ player_df$name <- as.factor(player_df$name)
 
 # Poisson mixed-effects model
 player_model <- glmer.nb(
-  pts ~ log(min_played) + pos + team + opponent + xG + xA + (1 | player_id), 
+  pts ~ scale(min_played) + pos + team + opponent + xG + xA + (1 | player_id), 
   family = poisson(link = "log"), 
   data = player_df,
   nAGQ=0,
-  control=glmerGrontrol(optimizer = "nloptwrap")
+  control=glmerControl(optimizer = "nloptwrap")
 )
 

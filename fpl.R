@@ -91,24 +91,47 @@ player_df$xGC <- as.numeric(player_df$xGC)
 
 #Factors
 player_df$name <- as.factor(player_df$name)
+player_df$team <- as.factor(player_df$team)
+player_df$opponent <- as.factor(player_df$opponent)
+player_df$pos <- as.factor(player_df$pos)
 
 #Scale variables
-player_df$min_played <- scale(player_df$min_played,center=T,scale=T)
+player_df$min_played <- scale(player_df$min_played, center=T, scale=T)
+player_df$bps <- scale(player_df$bps, center=T, scale=T)
+player_df$bonus <- scale(player_df$bonus, center=T, scale=T)
+player_df$influence <- scale(player_df$influence, center=T, scale=T)
+player_df$creativity <- scale(player_df$creativity, center=T, scale=T)
+player_df$value <- scale(player_df$value, center=T, scale=T)
+player_df$ict_index <- scale(player_df$ict_index, center=T, scale=T)
+player_df$threat <- scale(player_df$threat, center=T, scale=T)
+
 
 player_model <- lmer(
-  pts ~ min_played + pos + team + opponent + xG + xA + (1 | name), 
-  #family = poisson(link = "log"), 
-  data = player_df,
-  #nAGQ=0,
-  #control=glmerControl(optimizer = "nloptwrap")
+  pts ~ xG + xG_Inv + xA + xGC + (1 | name) + (1 | team) + (1 | opponent), 
+  data = player_df
 )
 
 eff <- ranef(player_model, condVar=TRUE)
 var <- attr(eff[[1]], "postVar")
 
+#Create player list
 pl <- data.frame(
       player_id = as.character(rownames(eff$name)),
       mode = eff$name[, "(Intercept)"],
       variance = sqrt(var[1, 1, ])
   )
+
+#Predict player points for a match in the future
+pred_data <- data.frame(
+  xG = c(0.59),
+  xG_Inv = c(0.8),
+  xA = c(0.21),
+  xGC = c(0.72),
+  starts = 1,
+  name = factor("M.Salah", levels = levels(player_df$name)),
+  team = factor("Liverpool", levels = levels(player_df$team)),
+  opponent = factor("Chelsea", levels = levels(player_df$opponent))
+)
+
+x_pts <- round(predict(player_model, pred_data))
 

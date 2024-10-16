@@ -93,14 +93,22 @@ player_df$xGC <- as.numeric(player_df$xGC)
 player_df$name <- as.factor(player_df$name)
 
 #Scale variables
+player_df$min_played <- scale(player_df$min_played,center=T,scale=T)
 
-
-# Poisson mixed-effects model
-player_model <- glmer.nb(
-  pts ~ scale(min_played) + pos + team + opponent + xG + xA + (1 | player_id), 
-  family = poisson(link = "log"), 
+player_model <- lmer(
+  pts ~ min_played + pos + team + opponent + xG + xA + (1 | name), 
+  #family = poisson(link = "log"), 
   data = player_df,
-  nAGQ=0,
-  control=glmerControl(optimizer = "nloptwrap")
+  #nAGQ=0,
+  #control=glmerControl(optimizer = "nloptwrap")
 )
+
+eff <- ranef(player_model, condVar=TRUE)
+var <- attr(eff[[1]], "postVar")
+
+pl <- data.frame(
+      player_id = as.character(rownames(eff$name)),
+      mode = eff$name[, "(Intercept)"],
+      variance = sqrt(var[1, 1, ])
+  )
 

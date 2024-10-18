@@ -117,7 +117,7 @@ var <- attr(eff[[1]], "postVar")
 #Create player list
 pl <- data.frame(
       player_id = as.character(rownames(eff$name)),
-      rank = eff$name[, "(Intercept)"],
+      rank = eff$name[, "(Intercept)"]
       
   )
 

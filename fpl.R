@@ -107,7 +107,7 @@ player_df$threat <- scale(player_df$threat, center=T, scale=T)
 
 
 player_model <- lmer(
-  pts ~ xG + xG_Inv + xA + xGC + starts + (1 | name) + (1 | team) + (1 | opponent), 
+  pts ~  (1 | name) + (1 | team) + (1 | opponent), 
   data = player_df
 )
 
@@ -117,17 +117,12 @@ var <- attr(eff[[1]], "postVar")
 #Create player list
 pl <- data.frame(
       player_id = as.character(rownames(eff$name)),
-      mode = eff$name[, "(Intercept)"],
-      variance = sqrt(var[1, 1, ])
+      rank = eff$name[, "(Intercept)"],
+      
   )
 
 #Predict player points for a match in the future
 pred_data <- data.frame(
-  xG = c(0.59),
-  xG_Inv = c(0.8),
-  xA = c(0.21),
-  xGC = c(0.72),
-  starts = 1,
   name = factor("M.Salah", levels = levels(player_df$name)),
   team = factor("Liverpool", levels = levels(player_df$team)),
   opponent = factor("Chelsea", levels = levels(player_df$opponent))

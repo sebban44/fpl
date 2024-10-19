@@ -111,6 +111,27 @@ player_model <- lmer(
   data = player_df
 )
 
+pl_gr <- player_df %>% 
+         group_by(name,pos) %>% 
+         summarise(
+            min_played = mean(min_played),
+            starts = mean(starts),
+            goals_scored = mean(goals_scored),
+            assists = mean(assists),
+            yellow_cards = sum(yellow_cards),
+            red_cards = sum(red_cards),
+            goals_conceded = mean(goals_conceded)
+           )
+
+my_players <- data.frame(name=c("Haaland","Duran","Cunha","Maddison","Luis Díaz","M.Salah","Georginio","Aina","Digne","Alexander-Arnold"),
+                         team=c("Man City","Aston Villa","Wolves","
+
+
+my_team <- pl_gr %>% filter(name %in% my_players)
+
+team_pts <- predict(player_model,my_team)
+          
+
 gk_model <- lmer(
    pts ~ (1 | name) + (1 | team) + (1 | opponent),
    data = gkp_df

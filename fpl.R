@@ -111,6 +111,11 @@ player_model <- lmer(
   data = player_df
 )
 
+gk_model <- lmer(
+   pts ~ (1 | name) + (1 | team) + (1 | opponent),
+   data = gkp_df
+)
+
 eff <- ranef(player_model, condVar=TRUE)
 var <- attr(eff[[1]], "postVar")
 
@@ -121,15 +126,23 @@ pl <- data.frame(
       
   )
 
+
 #Predict player points for a match in the future
-pred_data <- data.frame(
-  pos = "FWD",
-  starts = 0,
-  name = factor("Duran", levels = levels(player_df$name)),
-  team = factor("Aston Villa", levels = levels(player_df$team)),
-  opponent = factor("Fulham", levels = levels(player_df$opponent))
+pred_pl <- data.frame(
+  pos = c("FWD","FWD","FWD","MID","MID","MID","MID","DEF","DEF","DEF"),
+  starts = c(1,0,1,1,1,1,1,1,1,1),
+  name = factor(c("Haaland", "Duran", "Cunha","M.Salah","Luis Díaz","Georginio","Maddison","Alexander-Arnold","Aina","Digne"),levels = levels(player_df$name)),
+  team = factor(c("Man City", "Aston Villa", "Wolves","Liverpool","Liverpool","Brighton","Spurs","Liverpool","Nott'm Forest","Aston Villa"),levels = levels(player_df$team)),
+  opponent = factor(c("Wolves","Fulham","Man City","Chelsea","Chelsea","Newcastle","West Ham","Chelsea","Crystal Palace","Fulham"),levels = levels(player_df$opponent))
 )
 
-x_pts <- round(predict(player_model, pred_data))
+pred_gk <- data.frame(
+  name = "Leno",
+  team = "Fulham",
+  opponent = "Aston Villa"
+)
 
-print(x_pts)
+x_pts <- round(predict(player_model, pred_pl))
+x_pts_gk <- round(predict(gk_model, pred_gk))
+
+predicted_points <- sum(x_pts,x_pts_gk) + 7

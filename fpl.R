@@ -96,18 +96,18 @@ player_df$opponent <- as.factor(player_df$opponent)
 player_df$pos <- as.factor(player_df$pos)
 
 #Scale variables
-player_df$min_played <- scale(player_df$min_played, center=T, scale=T)
-player_df$bps <- scale(player_df$bps, center=T, scale=T)
-player_df$bonus <- scale(player_df$bonus, center=T, scale=T)
-player_df$influence <- scale(player_df$influence, center=T, scale=T)
-player_df$creativity <- scale(player_df$creativity, center=T, scale=T)
-player_df$value <- scale(player_df$value, center=T, scale=T)
-player_df$ict_index <- scale(player_df$ict_index, center=T, scale=T)
-player_df$threat <- scale(player_df$threat, center=T, scale=T)
+#player_df$min_played <- scale(player_df$min_played, center=T, scale=T)
+#player_df$bps <- scale(player_df$bps, center=T, scale=T)
+#player_df$bonus <- scale(player_df$bonus, center=T, scale=T)
+#player_df$influence <- scale(player_df$influence, center=T, scale=T)
+#player_df$creativity <- scale(player_df$creativity, center=T, scale=T)
+#player_df$value <- scale(player_df$value, center=T, scale=T)
+#player_df$ict_index <- scale(player_df$ict_index, center=T, scale=T)
+#player_df$threat <- scale(player_df$threat, center=T, scale=T)
 
 
 player_model <- lmer(
-  pts ~ pos + starts + (1 | name) + (1 | team) + (1 | opponent), 
+  pts ~ pos + min_played + starts + goals_scored + assists + yellow_cards + red_cards + goals_conceded + (1 | name) + (1 | team) + (1 | opponent), 
   data = player_df
 )
 

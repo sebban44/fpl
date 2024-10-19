@@ -107,7 +107,7 @@ player_df$threat <- scale(player_df$threat, center=T, scale=T)
 
 
 player_model <- lmer(
-  pts ~  (1 | name) + (1 | team) + (1 | opponent), 
+  pts ~ pos + starts + (1 | name) + (1 | team) + (1 | opponent), 
   data = player_df
 )
 
@@ -123,10 +123,13 @@ pl <- data.frame(
 
 #Predict player points for a match in the future
 pred_data <- data.frame(
-  name = factor("M.Salah", levels = levels(player_df$name)),
-  team = factor("Liverpool", levels = levels(player_df$team)),
-  opponent = factor("Chelsea", levels = levels(player_df$opponent))
+  pos = "FWD",
+  starts = 0,
+  name = factor("Duran", levels = levels(player_df$name)),
+  team = factor("Aston Villa", levels = levels(player_df$team)),
+  opponent = factor("Fulham", levels = levels(player_df$opponent))
 )
 
 x_pts <- round(predict(player_model, pred_data))
 
+print(x_pts)

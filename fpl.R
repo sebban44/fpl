@@ -107,7 +107,7 @@ player_df$pos <- as.factor(player_df$pos)
 
 
 player_model <- lmer(
-  pts ~ pos + min_played + starts + goals_scored + assists + yellow_cards + red_cards + goals_conceded + (1 | name) + (1 | team) + (1 | opponent), 
+  pts ~ pos + min_played + starts + xG + xA + xG_Inv + xGC + yellow_cards + red_cards  + (1 | name) + (1 | team) + (1 | opponent), 
   data = player_df
 )
 
@@ -116,45 +116,32 @@ pl_gr <- player_df %>%
          summarise(
             min_played = mean(min_played),
             starts = mean(starts),
-            goals_scored = mean(goals_scored),
-            assists = mean(assists),
+            xG = mean(xG),
+            xA = mean(xA),
+            xG_Inv = mean(xG_Inv),
+            xGC = mean(xGC),
             yellow_cards = sum(yellow_cards),
             red_cards = sum(red_cards),
-            goals_conceded = mean(goals_conceded)
+            goals_conceded = mean(goals_conceded),
+            bps = mean(bps),
+            bonus = mean(bonus),
+            influence = mean(influence),
+            creativity = mean(creativity)
            )
 
 my_players <- data.frame(name=c("Haaland","Duran","Cunha","Maddison","Luis Díaz","M.Salah","Georginio","Aina","Digne","Alexander-Arnold"),
-                         team=c("Man City","Aston Villa","Wolves","
+                         team=c("Man City","Aston Villa","Wolves","Spurs","Liverpool","Liverpool","Brighton","Nott'm Forest","Aston Villa","Liverpool"),
+                         opponent=c("Wolves","Fulham","Man City","West Ham","Chelsea","Chelsea","Newcastle","Crystal Palace","Fulham","Chelsea")
+                         )
+my_team <- inner_join(pl_gr,my_players,by=c("name"))
 
-
-my_team <- pl_gr %>% filter(name %in% my_players)
-
-team_pts <- predict(player_model,my_team)
+my_team$x_pts <- round(predict(player_model,my_team))
           
+print(round(sum(my_team$x_pts)))
 
 gk_model <- lmer(
    pts ~ (1 | name) + (1 | team) + (1 | opponent),
    data = gkp_df
-)
-
-eff <- ranef(player_model, condVar=TRUE)
-var <- attr(eff[[1]], "postVar")
-
-#Create player list
-pl <- data.frame(
-      player_id = as.character(rownames(eff$name)),
-      rank = eff$name[, "(Intercept)"]
-      
-  )
-
-
-#Predict player points for a match in the future
-pred_pl <- data.frame(
-  pos = c("FWD","FWD","FWD","MID","MID","MID","MID","DEF","DEF","DEF"),
-  starts = c(1,0,1,1,1,1,1,1,1,1),
-  name = factor(c("Haaland", "Duran", "Cunha","M.Salah","Luis Díaz","Georginio","Maddison","Alexander-Arnold","Aina","Digne"),levels = levels(player_df$name)),
-  team = factor(c("Man City", "Aston Villa", "Wolves","Liverpool","Liverpool","Brighton","Spurs","Liverpool","Nott'm Forest","Aston Villa"),levels = levels(player_df$team)),
-  opponent = factor(c("Wolves","Fulham","Man City","Chelsea","Chelsea","Newcastle","West Ham","Chelsea","Crystal Palace","Fulham"),levels = levels(player_df$opponent))
 )
 
 pred_gk <- data.frame(

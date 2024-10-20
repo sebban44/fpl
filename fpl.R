@@ -107,7 +107,7 @@ player_df$pos <- as.factor(player_df$pos)
 
 
 player_model <- lmer(
-  pts ~ pos + min_played + starts + xG + xA + xG_Inv + xGC + yellow_cards + red_cards  + (1 | name) + (1 | team) + (1 | opponent), 
+  pts ~ pos + min_played + starts + goals_scored + assists + goals_conceded + yellow_cards + red_cards  + (1 | name) + (1 | team) + (1 | opponent), 
   data = player_df
 )
 
@@ -116,17 +116,18 @@ pl_gr <- player_df %>%
          summarise(
             min_played = mean(min_played),
             starts = mean(starts),
-            xG = mean(xG),
-            xA = mean(xA),
-            xG_Inv = mean(xG_Inv),
-            xGC = mean(xGC),
+            goals_scored = mean(goals_scored),
+            assists = mean(assists),
             yellow_cards = sum(yellow_cards),
             red_cards = sum(red_cards),
             goals_conceded = mean(goals_conceded),
             bps = mean(bps),
             bonus = mean(bonus),
             influence = mean(influence),
-            creativity = mean(creativity)
+            creativity = mean(creativity),
+            ict_index = mean(ict_index),
+            threat = mean(threat),
+            clean_sheets = mean(clean_sheets)
            )
 
 my_players <- data.frame(name=c("Haaland","Duran","Cunha","Maddison","Luis Díaz","M.Salah","Georginio","Aina","Digne","Alexander-Arnold"),
@@ -139,18 +140,21 @@ my_team$x_pts <- round(predict(player_model,my_team))
           
 print(round(sum(my_team$x_pts)))
 
+gkp_df <- gkp_df %>% filter(min_played > 0)
+
 gk_model <- lmer(
-   pts ~ (1 | name) + (1 | team) + (1 | opponent),
+   pts ~ min_played + saves + goals_conceded + clean_sheets + (1 | name) + (1 | team) + (1 | opponent),
    data = gkp_df
 )
 
-pred_gk <- data.frame(
-  name = "Leno",
-  team = "Fulham",
-  opponent = "Aston Villa"
-)
+my_gk <- data.frame(name=c("Leno"), team = c("Fulham"), opponent = c("Aston Villa"))
 
-x_pts <- round(predict(player_model, pred_pl))
-x_pts_gk <- round(predict(gk_model, pred_gk))
+gk_gr <- gkp_df %>% group_by(name) %>% summarise(min_played = mean(min_played), saves = mean(saves), goals_conceded = mean(goals_conceded), clean_sheets = mean(clean_sheets))
 
-predicted_points <- sum(x_pts,x_pts_gk) + 7
+my_gk <- inner_join(gk_gr, my_gk,by=c("name"))
+
+my_gk$x_pts <- round(predict(gk_model,my_gk))
+
+predicted_points <- sum(my_team$x_pts,my_gk$x_pts) 
+
+print(paste0("Predicted Points for Game Week: ", predicted_points))

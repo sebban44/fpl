@@ -2,7 +2,6 @@ library(dplyr)
 library(rvest)
 library(jsonlite)
 library(brms)
-library(lme4)
 
 data <- fromJSON("https://fantasy.premierleague.com/api/bootstrap-static/")
 
@@ -42,6 +41,8 @@ select(
     date,
     team = team_name.x,
     opponent = team_name.y,
+    was_home,
+    round,
     player_id=element,
     name,
     pos,
@@ -76,9 +77,6 @@ select(
     transfers_out
 )
 
-gkp_df <- player_df %>% filter(pos == "GKP")
-player_df <- player_df %>% filter(!pos == "GKP")
-
 #Convert to numeric variables
 player_df$influence <- as.numeric(player_df$influence)
 player_df$creativity <- as.numeric(player_df$creativity)
@@ -95,45 +93,94 @@ player_df$team <- as.factor(player_df$team)
 player_df$opponent <- as.factor(player_df$opponent)
 player_df$pos <- as.factor(player_df$pos)
 
-#Scale variables
-#player_df$min_played <- scale(player_df$min_played, center=T, scale=T)
-#player_df$bps <- scale(player_df$bps, center=T, scale=T)
-#player_df$bonus <- scale(player_df$bonus, center=T, scale=T)
-#player_df$influence <- scale(player_df$influence, center=T, scale=T)
-#player_df$creativity <- scale(player_df$creativity, center=T, scale=T)
-#player_df$value <- scale(player_df$value, center=T, scale=T)
-#player_df$ict_index <- scale(player_df$ict_index, center=T, scale=T)
-#player_df$threat <- scale(player_df$threat, center=T, scale=T)
+player_df$was_home <- ifelse(player_df$was_home == TRUE, 1, 0)
+player_df$min_played <- scale(player_df$min_played)
+player_df$bps <- scale(player_df$min_played)
+player_df$influence <- scale(player_df$influence)
+player_df$creativity <- scale(player_df$creativity)
+player_df$threat <- scale(player_df$threat)
 
+gkp_df <- player_df %>% filter(pos == "GKP")
+player_df <- player_df %>% filter(!pos == "GKP")
 
-player_model <- lmer(
-  pts ~ pos + min_played + starts + goals_scored + assists + goals_conceded + yellow_cards + red_cards  + (1 | name) + (1 | team) + (1 | opponent), 
-  data = player_df
+f <- bf(pts ~  pos + min_played + was_home + xG + xA + xG_Inv + xGC + yellow_cards + red_cards + bps + (1 | name) + (1 | team) + (1 | opponent) )
+fam <- gaussian()
+pr <- c(
+  set_prior("normal(0, 1)", class = "b"),        
+  set_prior("normal(0, 1)", class = "sd", group = "name"),      
+  set_prior("normal(0, 1)", class = "sd", group = "team"),       
+  set_prior("normal(0, 1)", class = "sd", group = "opponent")
 )
+
+fit <- brm(
+        formula = f,
+        data = player_df,
+        family = fam,
+        prior = pr,
+        chains = 4,
+        cores = 4,
+        backend = "cmdstanr"
+)
+
+summary(fit)
+
+f_p <- bf(goals_scored ~  pos + min_played + xG + (1 | name) + (1 | team) + (1 | opponent) )
+pr <- c(
+  set_prior("normal(0, 1)", class = "b"),        
+  set_prior("normal(0, 1)", class = "sd", group = "name"),      
+  set_prior("normal(0, 1)", class = "sd", group = "team"),       
+  set_prior("normal(0, 1)", class = "sd", group = "opponent")
+)
+
+fit_pois <- brm(
+        formula = f_p,
+        data = player_df,
+        family = poisson("log"),
+        prior = pr,
+        chains = 4,
+        cores = 4,
+        backend = "cmdstanr"
+)
+
+summary(fit_pois)
+
+
+
+
+pl <- data.frame(posterior_summary(fit,variable = "r_name"))
+
+print(head(pl %>% arrange(desc(Estimate))))
+
 
 pl_gr <- player_df %>% 
          group_by(name,pos) %>% 
          summarise(
-            min_played = mean(min_played),
+            pts = mean(pts),
             starts = mean(starts),
-            goals_scored = mean(goals_scored),
-            assists = mean(assists),
-            yellow_cards = sum(yellow_cards),
-            red_cards = sum(red_cards),
-            goals_conceded = mean(goals_conceded),
-            bps = mean(bps),
+            min_played = mean(min_played),
+            xG = mean(xG),
+            xA = mean(xA),
+            xG_Inv = mean(xG_Inv),
+            xGC = mean(xGC),
+            yellow_cards = mean(yellow_cards),
+            red_cards = mean(red_cards),
             bonus = mean(bonus),
+            bps = mean(bps),
             influence = mean(influence),
             creativity = mean(creativity),
-            ict_index = mean(ict_index),
-            threat = mean(threat),
-            clean_sheets = mean(clean_sheets)
+            threat = mean(threat)
            )
+
 
 my_players <- data.frame(name=c("Haaland","Duran","Cunha","Maddison","Luis Díaz","M.Salah","Georginio","Aina","Digne","Alexander-Arnold"),
                          team=c("Man City","Aston Villa","Wolves","Spurs","Liverpool","Liverpool","Brighton","Nott'm Forest","Aston Villa","Liverpool"),
                          opponent=c("Wolves","Fulham","Man City","West Ham","Chelsea","Chelsea","Newcastle","Crystal Palace","Fulham","Chelsea")
                          )
+
+my_players$pos <- factor(my_players$pos, levels = player_df$pos)
+
+
+
 my_team <- inner_join(pl_gr,my_players,by=c("name"))
 
 my_team$x_pts <- round(predict(player_model,my_team))
